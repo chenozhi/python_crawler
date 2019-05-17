@@ -30,7 +30,7 @@ pd.set_option('display.max_columns',None)
 pd.set_option('display.max_rows',None)
 pd.set_option('expand_frame_repr', False)
 def read_record():
-    title = ["ID","日期","作者","标题","浏览","回复","链接"]
+    title = ["日期","作者","标题","得分","浏览","回复","链接"]
     df = pd.read_csv("postRecord.txt",sep='\t',names=title)
     #chunker = pd.read_csv("postRecord.txt",sep='\t',names=title,chunksize=1000)
 
@@ -60,9 +60,17 @@ def read_record():
     data = {'Month': ['Jan', 'Feb', 'Mar', 'Apr'], 'Total':[len(jan),len(feb),len(mar),len(april)]}
 
     dfRe = pd.DataFrame(data)
-    print(df['标题'])
-    # dfRe.plot.bar(x='Month',y='Total')
-    # plt.show()
+    # print(df['标题'])
+    dfRe.plot.bar(x='Month',y='Total',color='orange')
+    plt.show()
+    dfNegtive = df.sort_values(['得分'], ascending=True).groupby('作者').sum()
+    dfPostive = df.sort_values(['得分'], ascending=False).groupby('作者').sum()
+    # print(dfPostive.sort_values(['得分'],ascending=False).head(20))
+    # print(dfNegtive.sort_values(['得分'], ascending=True).head(20))
+
+    print(df[~df['作者'].isin(['爱卡活动专员','米色超级版主'])].sort_values(['浏览'], ascending=False).head(10))
+    print(df[~df['作者'].isin(['爱卡活动专员', '米色超级版主','论坛编辑'])].sort_values(['回复'], ascending=False).head(30))
+
     #df['日期'].plot()
     #df1 = df.loc[df['作者'].str.contains('白手帕')]
     #print(df.head(10))

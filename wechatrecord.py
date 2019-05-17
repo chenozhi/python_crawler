@@ -12,7 +12,7 @@ with open(filename,encoding='utf8') as fin:
     lines = fin.readlines()
     for line in lines:
         line = line.strip('\n').split('\t')[3]
-        chtext += ' '.join(jieba.cut(line,cut_all=True))
+        chtext += ' '.join(jieba.cut(line))
 # 调用包PIL中的open方法，读取图片文件，通过numpy中的array方法生成数组
 backgroud_Image = np.array(Image.open("back.png"))
 
@@ -21,7 +21,7 @@ wc = WordCloud(
     background_color='white',  # 设置背景颜色，与图片的背景色相关
     mask=backgroud_Image,  # 设置背景图片
     font_path='C:\Windows\Fonts\STZHONGS.TTF',  # 显示中文，可以更换字体
-    max_words=40,  # 设置最大显示的字数
+    max_words=30,  # 设置最大显示的字数
     stopwords={'xcar.com.cn','怎么','一个','还是','为什么','没有','就是','可以',
                '是不是','不是','今天','究竟','到底','没有','现在','大家',
                '哪里','那个','到底','同学','有人','有点','关于','一下',
@@ -29,10 +29,10 @@ wc = WordCloud(
         , '我们','不用','看到','哪个','什么','这种','这样','多少','啥子'
         , '出来','不要','今年','事情','需要','开始','不能'
         , '几个','最近','居然','已经','口','本','时候','情况','第一','各位','求助','看看','发现','注意','发生'
-               ,'个人','不会','男子'},  # 设置停用词，停用词则不再词云图中表示
+        , '视频', '成都','四川', '爱卡','喜欢', '川分','一定','一部','不错', '这些', '不会','个人','很多','男子','推荐','请问','终于','比较','咨询','时间','地方','请教','事件'},  # 设置停用词，停用词则不再词云图中表示
     max_font_size=150,  # 设置字体最大值
-    random_state=6,  # 设置有多少种随机生成状态，即有多少种配色方案
-    scale=1  # 设置生成的词云图的大小
+    random_state=11,  # 设置有多少种随机生成状态，即有多少种配色方案
+    scale=1 # 设置生成的词云图的大小
 )
 # 传入需画词云图的文本
 wc.generate(chtext)
@@ -42,6 +42,7 @@ plt.imshow(wc.recolor(color_func=image_colors))
 
 # 隐藏图像坐标轴
 plt.axis("off")
+plt.savefig('xcar.jpg')
 # 展示图片
 plt.show()
 

@@ -19,7 +19,7 @@ def cookie_to_dict(cookie):
     return cookie_dict
 
 
-webPrefix = "www.xcar.com.cn"
+webPrefix = "http://www.xcar.com.cn"
 cookie = "TY_SESSION_ID=5161db72-38a7-4936-aee6-5388d4fe8c3d; _Xdwuv=5444177068682; _PVXuv=5c0df1a5758f7; bbs_cookietime=31536000; bdshare_firstime=1555479648073; Hm_lvt_53eb54d089f7b5dd4ae2927686b183e0=1554685003,1555290086,1555300755,1555987037; _Xdwnewuv=1; _fwck_www=58cd4d57c66bf862fdef9f59ba2b9db9; _appuv_www=a83f70c3d4a5d218ad388dfe812908b3; _fwck_my=7a2a0efe10e2a99c4bcc9c012f26b9ee; _appuv_my=24cf7e3c56e42ac84333f9e52d507c23; fw_pvc=1%3A1556414067%3B1%3A1556414085%3B1%3A1556414089%3B1%3A1556414090%3B1%3A1556414440; fw_slc=1%3A1556414435%3B1%3A1556414437%3B1%3A1556414441%3B1%3A1556414442%3B1%3A1556414446; fw_exc=1%3A1556414086%3B1%3A1556414087%3B1%3A1556414094%3B1%3A1556414098%3B1%3A1556414494; fw_clc=1%3A1556414080%3B1%3A1556414086%3B1%3A1556414494%3B1%3A1556420272%3B1%3A1556423299; ad__city=386; uv_firstv_refers=http%3A//www.xcar.com.cn/bbs/forumdisplay.php%3Ffid%3D46; _discuz_uid=8822957; _discuz_pw=5741a1f9bccb40408e4e57a0dcba3923; _xcar_name=TheBigBang; _discuz_vip=0; bbs_auth=BBnhtVN4%2FBYPYyN1vZYTvV5it3%2BO7h7vNHbe7sLfACgM2GTxtbNdrYbRI0qkaFNBCA; bbs_sid=HxhVuZ; bbs_visitedfid=46D1109D91D43D114D1588D44D456D120D1783D53D255D1292; _Xdwstime=1556433790; Hm_lpvt_53eb54d089f7b5dd4ae2927686b183e0=1556433811"
 
 class LineInfo:
@@ -36,7 +36,7 @@ dict = {}
 header = {'content-type': 'application/json','User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.108 Safari/537.36'}
 index = 0
 fRecord = open("postRecord.txt", "wb")
-for i in range(271):
+for i in range(240):
     resp = requests.post(url='http://www.xcar.com.cn/bbs/forumdisplay.php?fid=46&page=%d' %(i+1), headers=header, cookies=cookie_to_dict(cookie))
     resp.encoding='utf-8'
     html=resp.text
@@ -48,9 +48,9 @@ for i in range(271):
 
     soup = BeautifulSoup(html,'lxml')
     # 数据库
-    # conn = sql.connect('xcar.db')
-    # cursor = conn.cursor()
-    # cursor.execute('create table IF NOT EXISTS april (id INTEGER primary key AUTOINCREMENT,postdate VARCHAR(20),author VARCHAR(40),title VARCHAR,clickcount INTEGER,replycount INTEGER,link VARCHAR)')
+    conn = sql.connect('xcar1to4.db')
+    cursor = conn.cursor()
+    cursor.execute('create table IF NOT EXISTS jantoapril (id INTEGER primary key AUTOINCREMENT,postdate VARCHAR(20),author VARCHAR(40),title VARCHAR,coin INTEGER,clickcount INTEGER,replycount INTEGER,link VARCHAR)')
 
     #通过tag的ID属性查找
     itemList = soup.find_all('dl', class_='list_dl')
@@ -70,31 +70,48 @@ for i in range(271):
         #过滤掉本月之前的帖子
         postDateNow = time.strptime(postDate, "%Y-%m-%d")
         postDateMin = time.strptime("2019-01-01", "%Y-%m-%d")
-        postDateMax = time.strptime("2019-05-15", "%Y-%m-%d")
+        postDateMax = time.strptime("2019-04-30", "%Y-%m-%d")
         if(postDateNow < postDateMin or postDateNow > postDateMax):
             continue
+        #凡是有加分扣分的帖子,进去搜索,取出分数
+        coin = "0"
+        if not itemdl.find('i', class_='icon icon-like') is None or not itemdl.find('i', class_='icon-unlike') is None:
+            respInner = requests.post(url=webPrefix +postUrl, headers=header, cookies=cookie_to_dict(cookie))
+            respInner.encoding='utf-8'
+            htmlInner=respInner.text
+            soupInner = BeautifulSoup(htmlInner, 'lxml')
+            coinBefore = soupInner.find('div', class_='xcarcoin_tb')
+            if not (coinBefore is None):
+                coin = coinBefore.string
+                if "+" in coin:
+                    coin = coin.split("+")[1]
+                elif "-" in coin:
+                    coin = "-%s" %(coin.split("-")[1])
+                #print(coin)
 
-        line = '%d' %(index+1) + "\t" + postDate + "\t" + postAuthor + "\t" + postTitle + "\t" + clickCount + "\t" + replyCount + "\t" + webPrefix + postUrl
+
+        line = postDate + "\t" + postAuthor + "\t" + postTitle + "\t" + coin + "\t" +clickCount + "\t" + replyCount + "\t" + webPrefix + postUrl
         lineinfo = LineInfo(line, int(clickCount),int(replyCount))
 
-        #cursor.execute("insert into april (id,postdate,author,title,clickcount,replycount,link) values (null,'%s','%s','%s','%s','%s','%s')"%(postDate,postAuthor,postTitle, clickCount,replyCount,webPrefix + postUrl))
-        # cursor.execute(
-        #     'INSERT INTO april (id,postdate,author,title,clickcount,replycount,link) values (null,?,?,?,?,?,?)',(postDate,postAuthor,postTitle, clickCount,replyCount,webPrefix + postUrl))
-        # # 提交事务:
-        # conn.commit()
+        #cursor.execute("INSERT INTO jantoapril (id,postdate,author,title,clickcount,replycount,link) values (null,'%s','%s','%s','%s','%s','%s')"%(postDate,postAuthor,postTitle, clickCount,replyCount,webPrefix + postUrl))
+        cursor.execute(
+             'INSERT INTO jantoapril (id,postdate,author,title,coin,clickcount,replycount,link) values (null,?,?,?,?,?,?,?)',(postDate,postAuthor,postTitle,coin,clickCount,replyCount,webPrefix + postUrl))
+        # 提交事务:
+        conn.commit()
         #postList.append(lineinfo)
 
+        print("当前第%s页:"%(i))
         print(line)
         fRecord.write(str.encode(line + '\r\n'))
 
         index += 1
 
 fRecord.close()
-# # 关闭Cursor:
-# cursor.close()
-#
-# # 关闭Connection:
-# conn.close()
+# 关闭Cursor:
+cursor.close()
+
+# 关闭Connection:
+conn.close()
 
 
 #降序
